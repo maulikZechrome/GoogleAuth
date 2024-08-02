@@ -43,8 +43,9 @@ passport.use(
         // do {
           const res = await gmail.users.messages.list({
             userId: 'me',
-            maxResults: 5, // Fetch 50 emails per request
+            maxResults: 5, // Fetch 5 emails per request
             // pageToken: nextPageToken,
+            // labelIds: ['UNREAD'],
           });
 
           messages = messages.concat(res.data.messages || []);
@@ -122,7 +123,8 @@ rootRouter.get(
 )
 
 rootRouter.get("/", (req, res) => {
-  res.status(200).json({success:true,detailedMessages})
+  res.status(200).send(detailedMessages)
+  // .json({success:true,detailedMessages})
 })
 
 export default rootRouter
