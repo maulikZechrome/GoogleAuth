@@ -10,7 +10,7 @@ dotenv.config()
 const CLIENT_ID = process.env.CLIENT_ID
 const CLIENT_SECRET = process.env.CLIENT_SECRET
 const REDIRECT_URI = process.env.REDIRECT_URI
-
+let detailedMessages:any[] =[]
 // Configure Passport with Google Strategy
 passport.use(
   new GoogleStrategy(
@@ -24,6 +24,7 @@ passport.use(
       const oauth2Client = new google.auth.OAuth2()
       oauth2Client.setCredentials({ access_token: accessToken })
       const peopleService = google.people({ version: "v1", auth: oauth2Client })
+      const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
       try {
         const me = await peopleService.people.get({
           resourceName: "people/me",
@@ -36,6 +37,33 @@ passport.use(
           profile,
           me: me.data // Log only the data part
         })
+        let messages: any[] = [];
+        let nextPageToken: any = null;
+
+        // do {
+          const res = await gmail.users.messages.list({
+            userId: 'me',
+            maxResults: 5, // Fetch 50 emails per request
+            // pageToken: nextPageToken,
+          });
+
+          messages = messages.concat(res.data.messages || []);
+          // nextPageToken = res.data.nextPageToken;
+        // } while (nextPageToken);
+
+        // Fetch details for each message
+        detailedMessages = await Promise.all(
+          messages.map(async (message) => {
+            const msg = await gmail.users.messages.get({
+              userId: 'me',
+              id: message.id,
+            });
+            return msg.data;
+          })
+        );
+
+        console.log('Messages:', detailedMessages);
+
         return done(null, profile)
       } catch (error) {
         console.log(error)
@@ -78,7 +106,7 @@ rootRouter.get(
       "https://www.googleapis.com/auth/user.phonenumbers.read",
       "https://www.googleapis.com/auth/user.gender.read",
       "https://www.googleapis.com/auth/user.organization.read",
-      "https://www.googleapis.com/auth/user.emails.read"
+      "https://www.googleapis.com/auth/user.emails.read",
     ],
     accessType: "offline",
     prompt: "consent"
@@ -94,7 +122,7 @@ rootRouter.get(
 )
 
 rootRouter.get("/", (req, res) => {
-  res.send("Home Page")
+  res.status(200).json({success:true,detailedMessages})
 })
 
 export default rootRouter
