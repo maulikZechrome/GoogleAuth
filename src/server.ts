@@ -1,3 +1,5 @@
+// Main file to run the server
+
 import express from "express"
 import dotenv from "dotenv"
 import bodyParser from "body-parser"
